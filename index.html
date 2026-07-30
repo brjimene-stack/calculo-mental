@@ -1,0 +1,168 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Reto de Cálculo Mental</title>
+<style>
+*{box-sizing:border-box}
+body{margin:0;min-height:100vh;font-family:Arial,Helvetica,sans-serif;background:#f4f6f8;color:#1f2937;display:flex;align-items:center;justify-content:center;padding:24px}
+.container{width:min(760px,100%)}
+.card{background:#fff;border-radius:18px;padding:32px;box-shadow:0 14px 40px rgba(0,0,0,.10)}
+.hidden{display:none}
+h1,h2{margin-top:0}
+.subtitle{color:#6b7280;margin-bottom:28px}
+.grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:18px}
+label{display:flex;flex-direction:column;gap:8px;font-weight:700;font-size:14px}
+input,select{width:100%;padding:12px 14px;border:1px solid #d1d5db;border-radius:10px;font-size:16px}
+button{border:none;border-radius:10px;padding:12px 18px;font-size:16px;font-weight:700;cursor:pointer;margin-top:20px}
+.primary{background:#1f4e78;color:#fff}
+.secondary{background:#e5e7eb;color:#111827;margin-left:8px}
+.topbar{display:flex;justify-content:space-between;gap:12px;color:#4b5563;font-size:14px}
+.timer-wrap{margin-top:28px}
+.timer-label{margin-bottom:8px;font-weight:700}
+.timer-track{height:14px;background:#e5e7eb;border-radius:999px;overflow:hidden}
+.timer-bar{height:100%;width:100%;background:#1f4e78;transition:width .1s linear}
+.operation{font-size:clamp(42px,8vw,72px);font-weight:800;text-align:center;margin:48px 0 24px}
+.answer{max-width:260px;margin:0 auto;display:block;text-align:center;font-size:28px;font-weight:700}
+#quiz .primary{display:block;margin-left:auto;margin-right:auto}
+.feedback{min-height:24px;text-align:center;font-weight:700}
+.error{color:#b91c1c;min-height:20px}
+.results{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px;margin-top:24px}
+.results div{background:#f3f4f6;border-radius:12px;padding:18px;display:flex;flex-direction:column;gap:8px}
+.results span{color:#6b7280;font-size:14px}
+.results strong{font-size:28px}
+.note{margin-top:24px;padding:14px;background:#eef2ff;border-radius:10px}
+@media(max-width:640px){.grid,.results{grid-template-columns:1fr}.card{padding:22px}.secondary{margin-left:0}}
+</style>
+</head>
+<body>
+<main class="container">
+<section class="card" id="setup">
+  <h1>Reto de Cálculo Mental</h1>
+  <p class="subtitle">Practica operaciones básicas con límite de tiempo.</p>
+  <div class="grid">
+    <label>Nombre del estudiante<input id="name" placeholder="Nombre completo"></label>
+    <label>Matrícula<input id="id" placeholder="Ej. A01234567"></label>
+    <label>Tipo de operación
+      <select id="type">
+        <option value="mixed">Mixtas</option>
+        <option value="addition">Sumas</option>
+        <option value="subtraction">Restas</option>
+        <option value="multiplication">Multiplicaciones</option>
+        <option value="division">Divisiones</option>
+      </select>
+    </label>
+    <label>Número de preguntas
+      <select id="count"><option>10</option><option>20</option><option>30</option></select>
+    </label>
+    <label>Tiempo por pregunta
+      <select id="seconds"><option value="5">5 segundos</option><option value="10" selected>10 segundos</option><option value="15">15 segundos</option><option value="20">20 segundos</option></select>
+    </label>
+  </div>
+  <button class="primary" id="start">Comenzar</button>
+  <button class="secondary" id="downloadAll">Descargar historial</button>
+  <p class="error" id="error"></p>
+</section>
+
+<section class="card hidden" id="quiz">
+  <div class="topbar"><span id="student"></span><span>Pregunta <strong id="qnum">1</strong>/<span id="total">10</span></span></div>
+  <div class="timer-wrap">
+    <div class="timer-label">Tiempo restante: <span id="timer">10</span>s</div>
+    <div class="timer-track"><div class="timer-bar" id="bar"></div></div>
+  </div>
+  <div class="operation" id="operation"></div>
+  <input class="answer" id="answer" type="number" inputmode="numeric" placeholder="Respuesta">
+  <button class="primary" id="submit">Responder</button>
+  <p class="feedback" id="feedback"></p>
+</section>
+
+<section class="card hidden" id="finish">
+  <h2>Resultados</h2>
+  <div class="results">
+    <div><span>Aciertos</span><strong id="correct">0</strong></div>
+    <div><span>Errores</span><strong id="wrong">0</strong></div>
+    <div><span>Precisión</span><strong id="accuracy">0%</strong></div>
+    <div><span>Tiempo promedio</span><strong id="avg">0s</strong></div>
+  </div>
+  <p class="note" id="weak"></p>
+  <button class="primary" id="restart">Nueva sesión</button>
+  <button class="secondary" id="downloadSession">Descargar esta sesión</button>
+</section>
+</main>
+
+<script>
+const $=id=>document.getElementById(id);
+const setup=$("setup"),quiz=$("quiz"),finish=$("finish");
+const symbols={addition:"+",subtraction:"−",multiplication:"×",division:"÷"};
+const labels={addition:"Suma",subtraction:"Resta",multiplication:"Multiplicación",division:"División"};
+let session,current,timerInt,startTime,accepting=false;
+
+function rand(a,b){return Math.floor(Math.random()*(b-a+1))+a}
+function show(el){[setup,quiz,finish].forEach(x=>x.classList.add("hidden"));el.classList.remove("hidden")}
+function opChoice(v){if(v!=="mixed")return v;return ["addition","subtraction","multiplication","division"][rand(0,3)]}
+function makeQuestion(selected){
+  const type=opChoice(selected);let a,b,ans;
+  if(type==="addition"){a=rand(0,99);b=rand(0,99);ans=a+b}
+  if(type==="subtraction"){a=rand(0,99);b=rand(0,a);ans=a-b}
+  if(type==="multiplication"){a=rand(0,12);b=rand(0,12);ans=a*b}
+  if(type==="division"){b=rand(1,12);ans=rand(0,12);a=b*ans}
+  return{type,a,b,ans,expr:`${a} ${symbols[type]} ${b}`}
+}
+function begin(){
+  const name=$("name").value.trim(),id=$("id").value.trim();
+  if(!name||!id){$("error").textContent="Escribe el nombre y la matrícula.";return}
+  $("error").textContent="";
+  session={sessionId:String(Date.now()),date:new Date().toISOString(),name,id,type:$("type").value,count:+$("count").value,seconds:+$("seconds").value,answers:[]};
+  $("student").textContent=`${name} · ${id}`;$("total").textContent=session.count;show(quiz);next();
+}
+function next(){
+  if(session.answers.length>=session.count){end();return}
+  current=makeQuestion(session.type);$("qnum").textContent=session.answers.length+1;$("operation").textContent=current.expr;
+  $("answer").value="";$("feedback").textContent="";$("answer").focus();accepting=true;startTime=Date.now();
+  clearInterval(timerInt);updateTimer();timerInt=setInterval(updateTimer,100);
+}
+function updateTimer(){
+  const elapsed=Date.now()-startTime,remaining=Math.max(0,session.seconds*1000-elapsed);
+  $("timer").textContent=Math.ceil(remaining/1000);$("bar").style.width=`${remaining/(session.seconds*1000)*100}%`;
+  if(remaining<=0){clearInterval(timerInt);record(null,true)}
+}
+function submit(){
+  if(!accepting)return;const raw=$("answer").value.trim();
+  if(raw===""){$("feedback").textContent="Escribe una respuesta.";return}
+  record(+raw,false)
+}
+function record(value,timedOut){
+  if(!accepting)return;accepting=false;clearInterval(timerInt);
+  const secs=Math.min(session.seconds,(Date.now()-startTime)/1000),correct=!timedOut&&value===current.ans;
+  session.answers.push({number:session.answers.length+1,type:current.type,expr:current.expr,studentAnswer:timedOut?"":value,correctAnswer:current.ans,correct,timedOut,time:+secs.toFixed(2)});
+  $("feedback").textContent=timedOut?`Tiempo agotado. Respuesta: ${current.ans}`:correct?"Correcto":`Incorrecto. Respuesta: ${current.ans}`;
+  setTimeout(next,700);
+}
+function end(){
+  const c=session.answers.filter(x=>x.correct).length,w=session.answers.length-c;
+  const acc=Math.round(c/session.answers.length*100),avg=session.answers.reduce((s,x)=>s+x.time,0)/session.answers.length;
+  $("correct").textContent=c;$("wrong").textContent=w;$("accuracy").textContent=acc+"%";$("avg").textContent=avg.toFixed(1)+"s";
+  const m={};session.answers.filter(x=>!x.correct).forEach(x=>m[x.type]=(m[x.type]||0)+1);
+  const weak=Object.entries(m).sort((a,b)=>b[1]-a[1])[0];
+  $("weak").textContent=weak?`Área por reforzar: ${labels[weak[0]]}.`:"No se detectaron áreas débiles en esta sesión.";
+  const h=JSON.parse(localStorage.getItem("mentalMathHistory")||"[]");h.push(session);localStorage.setItem("mentalMathHistory",JSON.stringify(h));show(finish);
+}
+function esc(v){return `"${String(v??"").replaceAll('"','""')}"`}
+function csv(sessions){
+  const rows=[["fecha","nombre","matricula","pregunta","tipo","operacion","respuesta","respuesta_correcta","correcta","tiempo_agotado","segundos"]];
+  sessions.forEach(s=>s.answers.forEach(a=>rows.push([s.date,s.name,s.id,a.number,labels[a.type],a.expr,a.studentAnswer,a.correctAnswer,a.correct?"Sí":"No",a.timedOut?"Sí":"No",a.time])));
+  return "\uFEFF"+rows.map(r=>r.map(esc).join(",")).join("\n");
+}
+function download(sessions,name){
+  if(!sessions.length){alert("Todavía no hay resultados.");return}
+  const blob=new Blob([csv(sessions)],{type:"text/csv;charset=utf-8"}),url=URL.createObjectURL(blob),a=document.createElement("a");
+  a.href=url;a.download=name;a.click();URL.revokeObjectURL(url);
+}
+$("start").onclick=begin;$("submit").onclick=submit;$("restart").onclick=()=>show(setup);
+$("downloadSession").onclick=()=>download([session],`sesion_${session.id}.csv`);
+$("downloadAll").onclick=()=>download(JSON.parse(localStorage.getItem("mentalMathHistory")||"[]"),"historial_calculo_mental.csv");
+$("answer").addEventListener("keydown",e=>{if(e.key==="Enter")submit()});
+</script>
+</body>
+</html>
