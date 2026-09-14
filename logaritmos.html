@@ -1,0 +1,503 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Mental Maths Challenge · Logs, Standard Form &amp; Accuracy</title>
+<style>
+*{box-sizing:border-box}
+body{margin:0;min-height:100vh;font-family:Arial,Helvetica,sans-serif;background:#f4f6f8;color:#1f2937;display:flex;align-items:center;justify-content:center;padding:24px}
+.container{width:min(760px,100%)}
+.card{background:#fff;border-radius:18px;padding:32px;box-shadow:0 14px 40px rgba(0,0,0,.10)}
+.hidden{display:none}
+h1,h2{margin-top:0}
+.subtitle{color:#6b7280;margin-bottom:28px}
+.grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:18px}
+label{display:flex;flex-direction:column;gap:8px;font-weight:700;font-size:14px}
+input,select{width:100%;padding:12px 14px;border:1px solid #d1d5db;border-radius:10px;font-size:16px;font-family:inherit}
+button{border:none;border-radius:10px;padding:12px 18px;font-size:16px;font-weight:700;cursor:pointer;margin-top:20px}
+.primary{background:#1f4e78;color:#fff}
+.secondary{background:#e5e7eb;color:#111827;margin-left:8px}
+.langbar{display:flex;justify-content:flex-end;gap:6px;margin-bottom:6px}
+.langbtn{margin:0;padding:6px 12px;font-size:13px;background:#e5e7eb;color:#374151;border-radius:999px}
+.langbtn.on{background:#1f4e78;color:#fff}
+.topbar{display:flex;justify-content:space-between;gap:12px;color:#4b5563;font-size:14px}
+.timer-wrap{margin-top:28px}
+.timer-label{margin-bottom:8px;font-weight:700}
+.timer-track{height:14px;background:#e5e7eb;border-radius:999px;overflow:hidden}
+.timer-bar{height:100%;width:100%;background:#1f4e78;transition:width .1s linear}
+.instr{text-align:center;color:#6b7280;font-size:15px;font-weight:700;letter-spacing:.02em;margin:40px 0 6px}
+.operation{font-size:clamp(34px,7vw,62px);font-weight:800;text-align:center;margin:0 0 24px;line-height:1.25;word-break:break-word}
+.operation sub{font-size:.55em;font-weight:700}
+.operation sup{font-size:.55em;font-weight:700}
+.answer{max-width:280px;margin:0 auto;display:block;text-align:center;font-size:28px;font-weight:700}
+#quiz .primary{display:block;margin-left:auto;margin-right:auto}
+.hint{text-align:center;color:#9ca3af;font-size:13px;margin:10px 0 0}
+.feedback{min-height:24px;text-align:center;font-weight:700}
+.ok{color:#15803d}.bad{color:#b91c1c}
+.error{color:#b91c1c;min-height:20px}
+.results{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px;margin-top:24px}
+.results div{background:#f3f4f6;border-radius:12px;padding:18px;display:flex;flex-direction:column;gap:8px}
+.results span{color:#6b7280;font-size:14px}
+.results strong{font-size:28px}
+.note{margin-top:24px;padding:14px;background:#eef2ff;border-radius:10px}
+table.bd{width:100%;border-collapse:collapse;margin-top:20px;font-size:14px}
+table.bd th,table.bd td{border-bottom:1px solid #e5e7eb;padding:9px 6px;text-align:left}
+table.bd th{color:#6b7280;font-weight:700}
+details.ib{margin-top:24px;background:#f9fafb;border:1px solid #e5e7eb;border-radius:12px;padding:14px 16px;font-size:14px}
+details.ib summary{cursor:pointer;font-weight:700;color:#1f4e78}
+details.ib h4{margin:16px 0 6px;font-size:13px;text-transform:uppercase;letter-spacing:.06em;color:#6b7280}
+details.ib ul{margin:0;padding-left:20px}
+details.ib li{margin-bottom:4px}
+@media(max-width:640px){.grid,.results{grid-template-columns:1fr}.card{padding:22px}.secondary{margin-left:0}}
+</style>
+</head>
+<body>
+<main class="container">
+
+<section class="card" id="setup">
+  <div class="langbar">
+    <button class="langbtn on" id="btnEs" type="button">ES</button>
+    <button class="langbtn" id="btnEn" type="button">EN</button>
+  </div>
+  <h1 data-i18n="title"></h1>
+  <p class="subtitle" data-i18n="subtitle"></p>
+  <div class="grid">
+    <label><span data-i18n="lblName"></span><input id="name" data-i18n-ph="phName"></label>
+    <label><span data-i18n="lblId"></span><input id="id" data-i18n-ph="phId"></label>
+    <label><span data-i18n="lblType"></span>
+      <select id="type">
+        <option value="mixed" data-i18n="optMixed"></option>
+        <option value="log" data-i18n="optLog"></option>
+        <option value="sci" data-i18n="optSci"></option>
+        <option value="dp" data-i18n="optDp"></option>
+        <option value="sf" data-i18n="optSf"></option>
+      </select>
+    </label>
+    <label><span data-i18n="lblCount"></span>
+      <select id="count"><option>10</option><option>20</option><option>30</option></select>
+    </label>
+    <label><span data-i18n="lblSeconds"></span>
+      <select id="seconds">
+        <option value="5" data-i18n="s5"></option>
+        <option value="10" selected data-i18n="s10"></option>
+        <option value="15" data-i18n="s15"></option>
+        <option value="20" data-i18n="s20"></option>
+      </select>
+    </label>
+  </div>
+  <button class="primary" id="start" data-i18n="btnStart"></button>
+  <button class="secondary" id="downloadAll" data-i18n="btnHistory"></button>
+  <p class="error" id="error"></p>
+
+  <details class="ib">
+    <summary data-i18n="ibSummary"></summary>
+    <h4 data-i18n="ibConcepts"></h4><ul id="ibConceptsList"></ul>
+    <h4 data-i18n="ibInquiry"></h4><ul id="ibInquiryList"></ul>
+    <h4 data-i18n="ibTok"></h4><ul id="ibTokList"></ul>
+    <h4 data-i18n="ibAtl"></h4><ul id="ibAtlList"></ul>
+    <h4 data-i18n="ibCommand"></h4><ul id="ibCommandList"></ul>
+  </details>
+</section>
+
+<section class="card hidden" id="quiz">
+  <div class="topbar">
+    <span id="student"></span>
+    <span><span data-i18n="qWord"></span> <strong id="qnum">1</strong>/<span id="total">10</span></span>
+  </div>
+  <div class="timer-wrap">
+    <div class="timer-label"><span data-i18n="timeLeft"></span> <span id="timer">10</span>s</div>
+    <div class="timer-track"><div class="timer-bar" id="bar"></div></div>
+  </div>
+  <div class="instr" id="instr"></div>
+  <div class="operation" id="operation"></div>
+  <input class="answer" id="answer" type="text" inputmode="decimal" autocomplete="off" data-i18n-ph="phAnswer">
+  <p class="hint" data-i18n="hint"></p>
+  <button class="primary" id="submit" data-i18n="btnSubmit"></button>
+  <p class="feedback" id="feedback"></p>
+</section>
+
+<section class="card hidden" id="finish">
+  <h2 data-i18n="resultsTitle"></h2>
+  <div class="results">
+    <div><span data-i18n="rCorrect"></span><strong id="correct">0</strong></div>
+    <div><span data-i18n="rWrong"></span><strong id="wrong">0</strong></div>
+    <div><span data-i18n="rAcc"></span><strong id="accuracy">0%</strong></div>
+    <div><span data-i18n="rAvg"></span><strong id="avg">0s</strong></div>
+  </div>
+  <table class="bd">
+    <thead><tr><th data-i18n="thSkill"></th><th data-i18n="thScore"></th><th data-i18n="thAcc"></th></tr></thead>
+    <tbody id="breakdown"></tbody>
+  </table>
+  <p class="note" id="weak"></p>
+  <button class="primary" id="restart" data-i18n="btnRestart"></button>
+  <button class="secondary" id="downloadSession" data-i18n="btnDownload"></button>
+</section>
+</main>
+
+<script>
+const $=id=>document.getElementById(id);
+const setup=$("setup"),quiz=$("quiz"),finish=$("finish");
+
+/* ---------------- i18n ---------------- */
+const I18N={
+ es:{
+  title:"Reto de Cálculo Mental · Logaritmos y Precisión",
+  subtitle:"Logaritmos exactos, notación científica, redondeo decimal y cifras significativas, con límite de tiempo.",
+  lblName:"Nombre del estudiante",phName:"Nombre completo",
+  lblId:"Matrícula",phId:"Ej. A01234567",
+  lblType:"Tipo de reactivo",
+  optMixed:"Mixtos",optLog:"Logaritmos exactos",optSci:"Notación científica → decimal",optDp:"Redondeo (cifras decimales)",optSf:"Cifras significativas",
+  lblCount:"Número de preguntas",lblSeconds:"Tiempo por pregunta",
+  s5:"5 segundos",s10:"10 segundos",s15:"15 segundos",s20:"20 segundos",
+  btnStart:"Comenzar",btnHistory:"Descargar historial",
+  errNeed:"Escribe el nombre y la matrícula.",
+  qWord:"Pregunta",timeLeft:"Tiempo restante:",
+  phAnswer:"Respuesta",btnSubmit:"Responder",
+  hint:"Usa punto decimal. Ej.: -3   0.0046   3700",
+  needAnswer:"Escribe una respuesta.",
+  badNumber:"Escribe un número válido.",
+  timeout:"Tiempo agotado. Respuesta:",correct:"¡Correcto!",incorrect:"Incorrecto. Respuesta:",
+  resultsTitle:"Resultados",rCorrect:"Aciertos",rWrong:"Errores",rAcc:"Precisión",rAvg:"Tiempo promedio",
+  thSkill:"Habilidad",thScore:"Aciertos",thAcc:"Precisión",
+  btnRestart:"Nueva sesión",btnDownload:"Descargar esta sesión",
+  weak:"Área por reforzar:",noWeak:"No se detectaron áreas débiles en esta sesión.",
+  noData:"Todavía no hay resultados.",
+  iEval:"Evalúa",iSci:"Escribe en forma decimal",
+  iDp:d=>"Redondea a "+(d===0?"la unidad más cercana":d+(d===1?" cifra decimal":" cifras decimales")),
+  iSf:n=>"Redondea a "+n+(n===1?" cifra significativa":" cifras significativas"),
+  names:{log:"Logaritmos",sci:"Notación científica",dp:"Cifras decimales",sf:"Cifras significativas"},
+  ibSummary:"Marco IB de la actividad (conceptos, indagación, TdC, ATL, términos de instrucción)",
+  ibConcepts:"Conceptos clave",ibInquiry:"Preguntas de indagación",ibTok:"Vínculo con TdC",ibAtl:"Habilidades ATL",ibCommand:"Términos de instrucción y evaluación",
+  ibConceptsList:["<b>Aproximación</b> — un valor redondeado representa, no reemplaza, al valor real.","<b>Representación</b> — la misma cantidad se escribe como logaritmo, notación científica o decimal.","<b>Equivalencia</b> — log<sub>b</sub>(b<sup>k</sup>) = k conserva la información del exponente.","<b>Cantidad</b> — el orden de magnitud comunica el tamaño antes que las cifras."],
+  ibInquiryList:["<b>Factual:</b> ¿Cuántas cifras significativas tiene 0.0450? ¿Cuál es el valor de log<sub>1/2</sub>(8)?","<b>Conceptual:</b> ¿Por qué cambiar la base de un logaritmo cambia el valor pero no la relación?","<b>Debatible:</b> ¿Hasta qué punto el redondeo de los datos modifica las conclusiones de un modelo?"],
+  ibTokList:["Si toda medición se reporta con precisión limitada, ¿en qué sentido un número puede ser «verdadero»?","¿La aproximación es una pérdida de conocimiento o una condición para producirlo?"],
+  ibAtlList:["<b>Pensamiento:</b> transferir estructuras exponente–logaritmo entre representaciones.","<b>Autogestión:</b> sostener la precisión bajo presión de tiempo.","<b>Comunicación:</b> usar notación y grado de exactitud correctos."],
+  ibCommandList:["<i>Calculate / Evaluate / Write down</i> — respuesta exacta, sin desarrollo requerido.","<i>Give your answer correct to … significant figures</i> — regla de exámenes MAI: 3 c.s. salvo indicación contraria.","IA MAI, <b>Criterio B (Comunicación matemática)</b>: notación y grado de exactitud coherentes."]
+ },
+ en:{
+  title:"Mental Maths Challenge · Logs &amp; Accuracy",
+  subtitle:"Exact logarithms, standard form, decimal rounding and significant figures, against the clock.",
+  lblName:"Student name",phName:"Full name",
+  lblId:"Student ID",phId:"e.g. A01234567",
+  lblType:"Question type",
+  optMixed:"Mixed",optLog:"Exact logarithms",optSci:"Standard form → decimal",optDp:"Rounding (decimal places)",optSf:"Significant figures",
+  lblCount:"Number of questions",lblSeconds:"Time per question",
+  s5:"5 seconds",s10:"10 seconds",s15:"15 seconds",s20:"20 seconds",
+  btnStart:"Start",btnHistory:"Download history",
+  errNeed:"Enter the student name and ID.",
+  qWord:"Question",timeLeft:"Time left:",
+  phAnswer:"Answer",btnSubmit:"Submit",
+  hint:"Use a decimal point. e.g. -3   0.0046   3700",
+  needAnswer:"Type an answer.",
+  badNumber:"Type a valid number.",
+  timeout:"Time's up. Answer:",correct:"Correct!",incorrect:"Incorrect. Answer:",
+  resultsTitle:"Results",rCorrect:"Correct",rWrong:"Incorrect",rAcc:"Accuracy",rAvg:"Average time",
+  thSkill:"Skill",thScore:"Correct",thAcc:"Accuracy",
+  btnRestart:"New session",btnDownload:"Download this session",
+  weak:"Area to strengthen:",noWeak:"No weak areas detected in this session.",
+  noData:"No results yet.",
+  iEval:"Evaluate",iSci:"Write in decimal form",
+  iDp:d=>"Round to "+(d===0?"the nearest whole number":d+(d===1?" decimal place":" decimal places")),
+  iSf:n=>"Round to "+n+(n===1?" significant figure":" significant figures"),
+  names:{log:"Logarithms",sci:"Standard form",dp:"Decimal places",sf:"Significant figures"},
+  ibSummary:"IB framing of this activity (concepts, inquiry, TOK, ATL, command terms)",
+  ibConcepts:"Key concepts",ibInquiry:"Inquiry questions",ibTok:"TOK link",ibAtl:"ATL skills",ibCommand:"Command terms &amp; assessment",
+  ibConceptsList:["<b>Approximation</b> — a rounded value represents, it does not replace, the true value.","<b>Representation</b> — one quantity written as a logarithm, in standard form, or as a decimal.","<b>Equivalence</b> — log<sub>b</sub>(b<sup>k</sup>) = k preserves the information carried by the exponent.","<b>Quantity</b> — order of magnitude communicates size before the digits do."],
+  ibInquiryList:["<b>Factual:</b> How many significant figures does 0.0450 have? What is log<sub>1/2</sub>(8)?","<b>Conceptual:</b> Why does changing the base of a logarithm change the value but not the relationship?","<b>Debatable:</b> To what extent does rounding data change the conclusions a model supports?"],
+  ibTokList:["If every measurement is reported to limited precision, in what sense can a number be \"true\"?","Is approximation a loss of knowledge, or a condition for producing it?"],
+  ibAtlList:["<b>Thinking:</b> transfer exponent–logarithm structure across representations.","<b>Self-management:</b> sustaining accuracy under time pressure.","<b>Communication:</b> using correct notation and degree of accuracy."],
+  ibCommandList:["<i>Calculate / Evaluate / Write down</i> — exact answer, no working required.","<i>Give your answer correct to … significant figures</i> — MAI exam rule: 3 s.f. unless otherwise stated.","MAI IA, <b>Criterion B (Mathematical communication)</b>: consistent notation and degree of accuracy."]
+ }
+};
+let lang="es";
+const T=()=>I18N[lang];
+
+function applyLang(){
+ const t=T();
+ document.documentElement.lang=lang;
+ document.querySelectorAll("[data-i18n]").forEach(el=>{const k=el.dataset.i18n;if(t[k]!==undefined)el.innerHTML=t[k]});
+ document.querySelectorAll("[data-i18n-ph]").forEach(el=>{const k=el.dataset.i18nPh;if(t[k]!==undefined)el.placeholder=t[k]});
+ fill("ibConceptsList",t.ibConceptsList);fill("ibInquiryList",t.ibInquiryList);
+ fill("ibTokList",t.ibTokList);fill("ibAtlList",t.ibAtlList);fill("ibCommandList",t.ibCommandList);
+ $("btnEs").classList.toggle("on",lang==="es");$("btnEn").classList.toggle("on",lang==="en");
+ if(current&&!quiz.classList.contains("hidden")){$("instr").textContent=current["instr"+cap(lang)];}
+ if(!finish.classList.contains("hidden")&&session)renderBreakdown();
+}
+function fill(id,arr){$(id).innerHTML=arr.map(x=>"<li>"+x+"</li>").join("")}
+function cap(s){return s[0].toUpperCase()+s.slice(1)}
+
+/* ---------------- helpers ---------------- */
+function rand(a,b){return Math.floor(Math.random()*(b-a+1))+a}
+function pick(arr){return arr[rand(0,arr.length-1)]}
+function show(el){[setup,quiz,finish].forEach(x=>x.classList.add("hidden"));el.classList.remove("hidden")}
+const SUP={"0":"⁰","1":"¹","2":"²","3":"³","4":"⁴","5":"⁵","6":"⁶","7":"⁷","8":"⁸","9":"⁹","-":"⁻"};
+function sup(n){return String(n).split("").map(c=>SUP[c]||c).join("")}
+function incStr(s){const a=s.split("");let i=a.length-1;while(i>=0){if(a[i]==="9"){a[i]="0";i--}else{a[i]=String(+a[i]+1);break}}if(i<0)a.unshift("1");return a.join("")}
+
+/* exact half-up rounding to N decimal places, on a plain positive decimal string */
+function roundDP(numStr,d){
+ let [ip,fp=""]=numStr.split(".");
+ if(fp.length<=d)return d>0?ip+"."+fp.padEnd(d,"0"):ip;
+ let keep=ip+fp.slice(0,d);
+ if(fp[d]>="5")keep=incStr(keep);
+ const ipLen=keep.length-d;
+ return d>0?keep.slice(0,ipLen)+"."+keep.slice(ipLen):keep;
+}
+/* exact half-up rounding to N significant figures */
+function roundSF(numStr,n){
+ let [ip,fp=""]=numStr.split(".");
+ let digits=ip+fp;const pointPos0=ip.length;
+ const f=digits.search(/[1-9]/);
+ const cut=f+n;
+ if(cut>=digits.length)digits=digits.padEnd(cut+1,"0");
+ let keep=digits.slice(0,cut);let pp=pointPos0;
+ if(digits[cut]>="5"){const inc=incStr(keep);if(inc.length>keep.length)pp++;keep=inc}
+ const end=Math.max(keep.length,pp);
+ const all=keep.padEnd(end,"0");
+ const ipOut=all.slice(0,pp)||"0",fpOut=all.slice(pp);
+ return fpOut?ipOut+"."+fpOut:ipOut;
+}
+/* is the cut point an exact tie (…5000)? */
+function isTie(digits,cut){
+ if(digits[cut]!=="5")return false;
+ return !/[1-9]/.test(digits.slice(cut+1));
+}
+/* coefficient × 10^exp as an exact decimal string */
+function shiftDecimal(coef,exp){
+ let neg=coef.startsWith("-");if(neg)coef=coef.slice(1);
+ let [ip,fp=""]=coef.split(".");
+ let digits=ip+fp,pp=ip.length+exp;
+ if(pp<1){digits="0".repeat(1-pp)+digits;pp=1}
+ if(pp>digits.length)digits=digits.padEnd(pp,"0");
+ let ipOut=digits.slice(0,pp).replace(/^0+(?=\d)/,""),fpOut=digits.slice(pp).replace(/0+$/,"");
+ return (neg?"-":"")+(fpOut?ipOut+"."+fpOut:ipOut);
+}
+/* normalise student input: spaces, thousands separators, comma decimals */
+function normalise(raw){
+ let s=raw.trim().replace(/\s|_/g,"");
+ if(/^-?[1-9]\d{0,2}(,\d{3})+(\.\d+)?$/.test(s))s=s.replace(/,/g,"");
+ else s=s.replace(/,/g,".");
+ return s;
+}
+
+/* ---------------- question banks ---------------- */
+function qLog(){
+ const kind=rand(1,10);
+ let baseHtml,argHtml,ans,code;
+ if(kind<=4){ // log_b(b^k), integer base
+   const b=rand(2,10);
+   const kmax=b<=3?6:b<=5?4:3;
+   let k=rand(-3,kmax);
+   const p=Math.pow(b,Math.abs(k));
+   argHtml=k<0?"1/"+p:String(p);
+   ans=k;
+   baseHtml=b===10?null:String(b);
+   code="log_"+b+"("+(k<0?"1/"+p:p)+")";
+ }else if(kind<=6){ // ln(e^k)
+   const k=rand(-3,5);
+   argHtml=k===0?"1":k===1?"e":"e"+sup(k);
+   ans=k;baseHtml="ln";
+   code="ln(e^"+k+")";
+ }else if(kind<=8){ // fractional base 1/b
+   const b=pick([2,3,5]);
+   let k=rand(-4,4);if(k===0)k=2;
+   const p=Math.pow(b,Math.abs(k));
+   argHtml=k<0?"1/"+p:String(p);
+   ans=-k;baseHtml="1/"+b;
+   code="log_(1/"+b+")("+(k<0?"1/"+p:p)+")";
+ }else{ // base m², argument m^odd -> half-integer answer
+   const m=pick([2,3,5]);
+   const j=pick([1,3,5,-1,-3]);
+   const p=Math.pow(m,Math.abs(j));
+   argHtml=j<0?"1/"+p:String(p);
+   ans=j/2;baseHtml=String(m*m);
+   code="log_"+(m*m)+"("+(j<0?"1/"+p:p)+")";
+ }
+ const head=baseHtml===null?"log":baseHtml==="ln"?"ln":"log<sub>"+baseHtml+"</sub>";
+ return{type:"log",code,valueHtml:head+"("+argHtml+")",
+   instrEs:I18N.es.iEval,instrEn:I18N.en.iEval,
+   ansNum:ans,ansStr:String(ans)};
+}
+
+function qSci(){
+ const nd=rand(1,3);
+ let coef=String(rand(1,9));
+ if(nd>1){
+   let frac="";
+   for(let i=1;i<nd;i++)frac+=String(rand(0,9));
+   frac=frac.replace(/0+$/,"");
+   if(frac)coef+="."+frac;
+ }
+ let exp=rand(-4,6);if(exp===0)exp=rand(1,6);
+ const neg=Math.random()<0.15;
+ const signed=(neg?"-":"")+coef;
+ const ansStr=shiftDecimal(signed,exp);
+ return{type:"sci",code:signed+"e"+exp,
+   valueHtml:(neg?"−":"")+coef+" × 10"+sup(exp),
+   instrEs:I18N.es.iSci,instrEn:I18N.en.iSci,
+   ansNum:Number(ansStr),ansStr};
+}
+
+function qDP(){
+ for(let attempt=0;attempt<40;attempt++){
+   const ipLen=rand(1,3),fpLen=rand(4,6);
+   let ip=String(rand(1,9));
+   for(let i=1;i<ipLen;i++)ip+=String(rand(0,9));
+   if(rand(1,4)===1)ip="0";
+   let fp="";for(let i=0;i<fpLen-1;i++)fp+=String(rand(0,9));fp+=String(rand(1,9));
+   const d=rand(0,3);
+   if(fp.length<=d)continue;
+   const digits=ip+fp,cut=ip.length+d;
+   if(isTie(digits,cut))continue;
+   const numStr=ip+"."+fp;
+   const ansStr=roundDP(numStr,d);
+   return{type:"dp",code:numStr+" -> "+d+" dp",
+     valueHtml:numStr,
+     instrEs:I18N.es.iDp(d),instrEn:I18N.en.iDp(d),
+     ansNum:Number(ansStr),ansStr};
+ }
+ return qSci();
+}
+
+function qSF(){
+ for(let attempt=0;attempt<40;attempt++){
+   const big=Math.random()<0.45;
+   let ip,fp;
+   if(big){
+     const ipLen=rand(3,5),withFp=Math.random()<0.5;
+     ip=String(rand(1,9));
+     for(let i=1;i<ipLen-(withFp?0:1);i++)ip+=String(rand(0,9));
+     if(!withFp&&ipLen>1)ip+=String(rand(1,9));
+     fp=withFp?String(rand(0,9))+String(rand(1,9)):"";
+   }else{
+     ip="0";
+     const zeros=rand(0,3);
+     fp="0".repeat(zeros)+String(rand(1,9));
+     const extra=rand(3,4);
+     for(let i=0;i<extra-1;i++)fp+=String(rand(0,9));
+     fp+=String(rand(1,9));
+   }
+   const numStr=fp?ip+"."+fp:ip;
+   const digits=ip+fp;
+   const f=digits.search(/[1-9]/);
+   const totalSig=digits.length-f;
+   if(totalSig<3)continue;
+   const n=rand(1,Math.min(4,totalSig-1));
+   const cut=f+n;
+   if(isTie(digits,cut))continue;
+   const ansStr=roundSF(numStr,n);
+   return{type:"sf",code:numStr+" -> "+n+" sf",
+     valueHtml:numStr,
+     instrEs:I18N.es.iSf(n),instrEn:I18N.en.iSf(n),
+     ansNum:Number(ansStr),ansStr};
+ }
+ return qDP();
+}
+
+const MAKERS={log:qLog,sci:qSci,dp:qDP,sf:qSF};
+function makeQuestion(selected){
+ const type=selected==="mixed"?pick(["log","sci","dp","sf"]):selected;
+ return MAKERS[type]();
+}
+
+/* ---------------- session flow ---------------- */
+let session,current,timerInt,startTime,accepting=false;
+
+function begin(){
+ const name=$("name").value.trim(),id=$("id").value.trim();
+ if(!name||!id){$("error").textContent=T().errNeed;return}
+ $("error").textContent="";
+ session={sessionId:String(Date.now()),date:new Date().toISOString(),name,id,
+   type:$("type").value,count:+$("count").value,seconds:+$("seconds").value,answers:[]};
+ $("student").textContent=name+" · "+id;
+ $("total").textContent=session.count;
+ show(quiz);next();
+}
+function next(){
+ if(session.answers.length>=session.count){end();return}
+ current=makeQuestion(session.type);
+ $("qnum").textContent=session.answers.length+1;
+ $("instr").textContent=current["instr"+cap(lang)];
+ $("operation").innerHTML=current.valueHtml;
+ $("answer").value="";$("feedback").textContent="";$("feedback").className="feedback";
+ $("answer").focus();accepting=true;startTime=Date.now();
+ clearInterval(timerInt);updateTimer();timerInt=setInterval(updateTimer,100);
+}
+function updateTimer(){
+ const elapsed=Date.now()-startTime,remaining=Math.max(0,session.seconds*1000-elapsed);
+ $("timer").textContent=Math.ceil(remaining/1000);
+ $("bar").style.width=(remaining/(session.seconds*1000)*100)+"%";
+ if(remaining<=0){clearInterval(timerInt);record(null,true)}
+}
+function submit(){
+ if(!accepting)return;
+ const raw=$("answer").value;
+ if(raw.trim()===""){$("feedback").textContent=T().needAnswer;$("feedback").className="feedback bad";return}
+ const v=Number(normalise(raw));
+ if(!isFinite(v)){$("feedback").textContent=T().badNumber;$("feedback").className="feedback bad";return}
+ record(v,false,raw.trim());
+}
+function isRight(v){
+ const a=current.ansNum;
+ return Math.abs(v-a)<=1e-9*Math.max(1,Math.abs(a));
+}
+function record(value,timedOut,raw){
+ if(!accepting)return;accepting=false;clearInterval(timerInt);
+ const secs=Math.min(session.seconds,(Date.now()-startTime)/1000);
+ const correct=!timedOut&&isRight(value);
+ session.answers.push({number:session.answers.length+1,type:current.type,expr:current.code,
+   studentAnswer:timedOut?"":raw,correctAnswer:current.ansStr,correct,timedOut,time:+secs.toFixed(2)});
+ const t=T();
+ $("feedback").textContent=timedOut?t.timeout+" "+current.ansStr:correct?t.correct:t.incorrect+" "+current.ansStr;
+ $("feedback").className="feedback "+(correct?"ok":"bad");
+ setTimeout(next,timedOut||!correct?1200:700);
+}
+function renderBreakdown(){
+ const t=T(),m={};
+ session.answers.forEach(a=>{const e=m[a.type]||(m[a.type]={n:0,c:0});e.n++;if(a.correct)e.c++});
+ $("breakdown").innerHTML=Object.entries(m).map(([k,v])=>
+   "<tr><td>"+t.names[k]+"</td><td>"+v.c+" / "+v.n+"</td><td>"+Math.round(v.c/v.n*100)+"%</td></tr>").join("");
+ const wrong={};session.answers.filter(a=>!a.correct).forEach(a=>wrong[a.type]=(wrong[a.type]||0)+1);
+ const weak=Object.entries(wrong).sort((a,b)=>b[1]-a[1])[0];
+ $("weak").textContent=weak?t.weak+" "+t.names[weak[0]]+".":t.noWeak;
+}
+function end(){
+ const c=session.answers.filter(x=>x.correct).length,w=session.answers.length-c;
+ const acc=Math.round(c/session.answers.length*100);
+ const avg=session.answers.reduce((s,x)=>s+x.time,0)/session.answers.length;
+ $("correct").textContent=c;$("wrong").textContent=w;
+ $("accuracy").textContent=acc+"%";$("avg").textContent=avg.toFixed(1)+"s";
+ renderBreakdown();
+ try{const h=JSON.parse(localStorage.getItem("logMathHistory")||"[]");h.push(session);localStorage.setItem("logMathHistory",JSON.stringify(h))}catch(e){}
+ show(finish);
+}
+
+/* ---------------- export ---------------- */
+const NEUTRAL={log:"Logarithms",sci:"Standard form",dp:"Decimal places",sf:"Significant figures"};
+function esc(v){return '"'+String(v==null?"":v).replaceAll('"','""')+'"'}
+function csv(sessions){
+ const rows=[["fecha","nombre","matricula","pregunta","tipo","reactivo","respuesta_alumno","respuesta_correcta","correcta","tiempo_agotado","segundos"]];
+ sessions.forEach(s=>s.answers.forEach(a=>rows.push([s.date,s.name,s.id,a.number,NEUTRAL[a.type]||a.type,a.expr,a.studentAnswer,a.correctAnswer,a.correct?"Si":"No",a.timedOut?"Si":"No",a.time])));
+ return "﻿"+rows.map(r=>r.map(esc).join(",")).join("\n");
+}
+function download(sessions,name){
+ if(!sessions||!sessions.length){alert(T().noData);return}
+ const blob=new Blob([csv(sessions)],{type:"text/csv;charset=utf-8"});
+ const url=URL.createObjectURL(blob),a=document.createElement("a");
+ a.href=url;a.download=name;a.click();URL.revokeObjectURL(url);
+}
+
+/* ---------------- wiring ---------------- */
+$("start").onclick=begin;
+$("submit").onclick=submit;
+$("restart").onclick=()=>show(setup);
+$("downloadSession").onclick=()=>download([session],"sesion_"+session.id+".csv");
+$("downloadAll").onclick=()=>{let h=[];try{h=JSON.parse(localStorage.getItem("logMathHistory")||"[]")}catch(e){}download(h,"historial_logaritmos_precision.csv")};
+$("answer").addEventListener("keydown",e=>{if(e.key==="Enter")submit()});
+$("btnEs").onclick=()=>{lang="es";applyLang()};
+$("btnEn").onclick=()=>{lang="en";applyLang()};
+applyLang();
+</script>
+</body>
+</html>
